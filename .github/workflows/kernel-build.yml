@@ -6,7 +6,7 @@ on:
       ksu_variant:
         description: 'KernelSU variant to build'
         required: true
-        default: 'tiann'
+        default: 'all'
         type: choice
         options:
           - tiann
@@ -23,17 +23,6 @@ on:
         required: false
         default: false
         type: boolean
-  push:
-    branches:
-      - main
-      - ksu-tiann
-      - ksu-kowsu
-      - ksu-mksu
-  pull_request:
-    branches:
-      - main
-  schedule:
-    - cron: '0 0 * * 0'
 
 permissions:
   contents: write
@@ -60,25 +49,16 @@ jobs:
       - name: Set Build Matrix
         id: set-matrix
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VARIANT="${{ github.event.inputs.ksu_variant }}"
-          elif [ "${{ github.ref }}" = "refs/heads/ksu-tiann" ]; then
-            VARIANT="tiann"
-          elif [ "${{ github.ref }}" = "refs/heads/ksu-kowsu" ]; then
-            VARIANT="kowsu"
-          elif [ "${{ github.ref }}" = "refs/heads/ksu-mksu" ]; then
-            VARIANT="mksu"
-          else
-            # Default to tiann for main branch or PRs
-            VARIANT="tiann"
-          fi
+          # Only workflow_dispatch triggers this workflow now
+          VARIANT="${{ github.event.inputs.ksu_variant }}"
           
           if [ "$VARIANT" = "all" ]; then
             echo 'matrix={"variant":["tiann","kowsu","mksu"]}' >> $GITHUB_OUTPUT
+            echo "🎯 Building ALL variants: tiann, kowsu, mksu"
           else
             echo "matrix={\"variant\":[\"$VARIANT\"]}" >> $GITHUB_OUTPUT
+            echo "🎯 Building variant: $VARIANT"
           fi
-          echo "🎯 Building variant(s): $VARIANT"
 
       - name: Set Build Config
         id: config
@@ -713,7 +693,7 @@ jobs:
           retention-days: 30
 
       - name: Create Release
-        if: success() && github.event_name != 'pull_request'
+        if: success()
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ matrix.variant }}-build-${{ github.run_number }}
