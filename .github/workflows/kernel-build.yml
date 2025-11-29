@@ -1128,31 +1128,121 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     if: always()
     steps:
-      - name: Extract Variant Info
-        if: always()
+      - name: Download Artifacts for Build Stats
+        if: ${{ needs.create_release.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          path: notify-assets
+
+      - name: Extract Build Stats for All Variants
+        if: ${{ needs.create_release.result == 'success' }}
         run: |
-          # Get variant info from matrix or input
-          VARIANT_INPUT="${{ github.event.inputs.ksu_variant }}"
-          if [ "$VARIANT_INPUT" = "all" ]; then
-            echo "VARIANTS_LIST=tiann, kowsu, mksu" >> $GITHUB_ENV
-          else
-            echo "VARIANTS_LIST=$VARIANT_INPUT" >> $GITHUB_ENV
+          cd notify-assets
+          
+          # Flatten directory structure
+          find . -type f \( -name "CHANGELOG-*.md" -o -name "build.log" \) -exec sh -c 'mv "$1" "$(basename "$(dirname "$1")")-$(basename "$1")"' _ {} \; 2>/dev/null || true
+          
+          echo "Extracting build statistics..."
+          ls -la
+          
+          # Extract stats for tiann
+          CHANGELOG=$(find . -name "CHANGELOG-tiann.md" -type f 2>/dev/null | head -1)
+          BUILDLOG=$(find . -name "*tiann*build.log" -type f 2>/dev/null | head -1)
+          
+          if [ -n "$CHANGELOG" ]; then
+            TIANN_VERSION=$(grep "KernelSU Version:" "$CHANGELOG" | head -1 | cut -d':' -f2 | xargs)
+            echo "TIANN_VERSION=$TIANN_VERSION" >> $GITHUB_ENV
+            echo "tiann version: $TIANN_VERSION"
+          fi
+          
+          if [ -n "$BUILDLOG" ]; then
+            TIANN_BUILD_TIME=$(grep "BUILD_TIME=" "$BUILDLOG" | tail -1 | cut -d'=' -f2 || echo "N/A")
+            TIANN_CCACHE=$(grep "Hit Rate:" "$BUILDLOG" | tail -1 | awk '{print $NF}' || echo "N/A")
+            echo "TIANN_BUILD_TIME=$TIANN_BUILD_TIME" >> $GITHUB_ENV
+            echo "TIANN_CCACHE=$TIANN_CCACHE" >> $GITHUB_ENV
+            echo "tiann stats: $TIANN_BUILD_TIME, CCACHE $TIANN_CCACHE"
+          fi
+          
+          # Extract stats for kowsu
+          CHANGELOG=$(find . -name "CHANGELOG-kowsu.md" -type f 2>/dev/null | head -1)
+          BUILDLOG=$(find . -name "*kowsu*build.log" -type f 2>/dev/null | head -1)
+          
+          if [ -n "$CHANGELOG" ]; then
+            KOWSU_VERSION=$(grep "KernelSU Version:" "$CHANGELOG" | head -1 | cut -d':' -f2 | xargs)
+            echo "KOWSU_VERSION=$KOWSU_VERSION" >> $GITHUB_ENV
+            echo "kowsu version: $KOWSU_VERSION"
+          fi
+          
+          if [ -n "$BUILDLOG" ]; then
+            KOWSU_BUILD_TIME=$(grep "BUILD_TIME=" "$BUILDLOG" | tail -1 | cut -d'=' -f2 || echo "N/A")
+            KOWSU_CCACHE=$(grep "Hit Rate:" "$BUILDLOG" | tail -1 | awk '{print $NF}' || echo "N/A")
+            echo "KOWSU_BUILD_TIME=$KOWSU_BUILD_TIME" >> $GITHUB_ENV
+            echo "KOWSU_CCACHE=$KOWSU_CCACHE" >> $GITHUB_ENV
+            echo "kowsu stats: $KOWSU_BUILD_TIME, CCACHE $KOWSU_CCACHE"
+          fi
+          
+          # Extract stats for mksu
+          CHANGELOG=$(find . -name "CHANGELOG-mksu.md" -type f 2>/dev/null | head -1)
+          BUILDLOG=$(find . -name "*mksu*build.log" -type f 2>/dev/null | head -1)
+          
+          if [ -n "$CHANGELOG" ]; then
+            MKSU_VERSION=$(grep "KernelSU Version:" "$CHANGELOG" | head -1 | cut -d':' -f2 | xargs)
+            echo "MKSU_VERSION=$MKSU_VERSION" >> $GITHUB_ENV
+            echo "mksu version: $MKSU_VERSION"
+          fi
+          
+          if [ -n "$BUILDLOG" ]; then
+            MKSU_BUILD_TIME=$(grep "BUILD_TIME=" "$BUILDLOG" | tail -1 | cut -d'=' -f2 || echo "N/A")
+            MKSU_CCACHE=$(grep "Hit Rate:" "$BUILDLOG" | tail -1 | awk '{print $NF}' || echo "N/A")
+            echo "MKSU_BUILD_TIME=$MKSU_BUILD_TIME" >> $GITHUB_ENV
+            echo "MKSU_CCACHE=$MKSU_CCACHE" >> $GITHUB_ENV
+            echo "mksu stats: $MKSU_BUILD_TIME, CCACHE $MKSU_CCACHE"
           fi
 
       - name: Send Success Notification
         if: ${{ needs.create_release.result == 'success' && github.event.inputs.enable_telegram == 'true' }}
         run: |
+          DOWNLOADS=""
+          CLOCK="⏱"
+          TARGET="🎯"
+          
+          if [ -n "${{ env.TIANN_VERSION }}" ]; then
+            DOWNLOADS="${DOWNLOADS}• tiann \`${{ env.TIANN_VERSION }}\` - [download](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})
+          "
+            if [ -n "${{ env.TIANN_BUILD_TIME }}" ]; then
+              DOWNLOADS="${DOWNLOADS}  ${CLOCK} ${{ env.TIANN_BUILD_TIME }} | ${TARGET} ${{ env.TIANN_CCACHE }}
+
+          "
+            fi
+          fi
+          
+          if [ -n "${{ env.KOWSU_VERSION }}" ]; then
+            DOWNLOADS="${DOWNLOADS}• kowsu \`${{ env.KOWSU_VERSION }}\` - [download](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})
+          "
+            if [ -n "${{ env.KOWSU_BUILD_TIME }}" ]; then
+              DOWNLOADS="${DOWNLOADS}  ${CLOCK} ${{ env.KOWSU_BUILD_TIME }} | ${TARGET} ${{ env.KOWSU_CCACHE }}
+
+          "
+            fi
+          fi
+          
+          if [ -n "${{ env.MKSU_VERSION }}" ]; then
+            DOWNLOADS="${DOWNLOADS}• mksu \`${{ env.MKSU_VERSION }}\` - [download](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})
+          "
+            if [ -n "${{ env.MKSU_BUILD_TIME }}" ]; then
+              DOWNLOADS="${DOWNLOADS}  ${CLOCK} ${{ env.MKSU_BUILD_TIME }} | ${TARGET} ${{ env.MKSU_CCACHE }}
+
+          "
+            fi
+          fi
+          
           MESSAGE="✅ *Build #${{ github.run_number }} Complete*
 
           📱 Pixel 8a/8/8 Pro | 🤖 Android 16
 
           📦 *Downloads:*
-          • tiann - [↓](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})
-          • kowsu - [↓](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})
-          • mksu - [↓](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})
-
-          🔗 [Release](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})"
-          
+          ${DOWNLOADS}🔗 [Release](https://github.com/${{ github.repository }}/releases/tag/build-${{ github.run_number }})"
+                    
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d text="$MESSAGE" \
@@ -1171,7 +1261,7 @@ jobs:
           MESSAGE="❌ *Build #${{ github.run_number }} Failed*
 
           ⚠️ *Failed:* ${FAILED_STAGE}
-          📦 *Variants:* ${{ env.VARIANTS_BUILT }}
+          📦 *Target:* ${{ github.event.inputs.ksu_variant }}
 
           🔗 [Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           
@@ -1187,7 +1277,7 @@ jobs:
           MESSAGE="⚠️ *Build #${{ github.run_number }} Cancelled*
 
           🔗 [Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-          
+                    
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d text="$MESSAGE" \
