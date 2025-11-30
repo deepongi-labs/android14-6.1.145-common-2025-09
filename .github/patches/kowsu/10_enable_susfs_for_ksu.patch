@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 From 3f3a1501c62d36ae1f548a3b8b0347340f0947dd Mon Sep 17 00:00:00 2001
 From: deepongi <infectedmushi@gmail.com>
 Date: Wed, 3 Dec 2025 01:08:41 +0000
@@ -25,6 +26,34 @@ Subject: [PATCH] 10_enable_susfs_for_ksu
 
 diff --git a/kernel/Kbuild b/kernel/Kbuild
 index 4cfe9727..b2e28043 100644
+=======
+From 3c5ef72be1b906c9fbe2d8ffa5fd92668c5a39fb Mon Sep 17 00:00:00 2001
+From: deepongi <infectedmushi@gmail.com>
+Date: Fri, 28 Nov 2025 14:37:01 +0000
+Subject: [PATCH] 10_enable_susfs_for_ksu
+
+---
+ kernel/Kconfig           |  91 ++++++++-
+ kernel/Makefile          |  10 +-
+ kernel/allowlist.c       |   4 +
+ kernel/app_profile.c     | 416 ++++++++++++++++++++-------------------
+ kernel/kernel_umount.c   |   3 +
+ kernel/ksu.c             |  18 +-
+ kernel/ksud.c            |  52 +++++
+ kernel/ksud.h            |  19 ++
+ kernel/manager.h         |  14 ++
+ kernel/selinux/rules.c   |   9 +
+ kernel/selinux/selinux.c |  93 +++++++++
+ kernel/selinux/selinux.h |  13 ++
+ kernel/setuid_hook.c     | 119 +++++++++++
+ kernel/sucompat.c        | 124 ++++++++++++
+ kernel/sucompat.h        |  10 +-
+ kernel/supercalls.c      | 150 ++++++++++++++
+ 16 files changed, 933 insertions(+), 212 deletions(-)
+
+diff --git a/kernel/Kbuild b/kernel/Kbuild
+index d98df1c3..ac7a98c3 100644
+>>>>>>> 37c7bfaa9dcd (patches: kernel: Move kernel part build rules from Makefile to Kbuild)
 --- a/kernel/Kbuild
 +++ b/kernel/Kbuild
 @@ -3,7 +3,6 @@ kernelsu-objs += allowlist.o
@@ -35,9 +64,15 @@ index 4cfe9727..b2e28043 100644
  kernelsu-objs += throne_tracker.o
  kernelsu-objs += pkg_observer.o
  kernelsu-objs += setuid_hook.o
+<<<<<<< HEAD
 @@ -77,4 +76,14 @@ ccflags-y += -DEXPECTED_HASH=\"$(KSU_EXPECTED_HASH)\"
  ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
  ccflags-y += -Wno-declaration-after-statement -Wno-unused-function -Wno-unused-variable
+=======
+@@ -76,4 +75,14 @@ ccflags-y += -DEXPECTED_HASH=\"$(KSU_EXPECTED_HASH)\"
+ ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
+ ccflags-y += -Wno-declaration-after-statement -Wno-unused-function
+>>>>>>> 37c7bfaa9dcd (patches: kernel: Move kernel part build rules from Makefile to Kbuild)
  
 +## For susfs stuff ##
 +ifeq ($(shell test -e $(srctree)/fs/susfs.c; echo $$?),0)
@@ -157,33 +192,6 @@ index cc4dbb3a..393e16cd 100644
 +endmenu
 +
  endmenu
-diff --git a/kernel/Kbuild b/kernel/Kbuild
-index d98df1c3..ac7a98c3 100644
---- a/kernel/Kbuild
-+++ b/kernel/Kbuild
-@@ -3,7 +3,6 @@ kernelsu-objs += allowlist.o
- kernelsu-objs += app_profile.o
- kernelsu-objs += apk_sign.o
- kernelsu-objs += sucompat.o
--kernelsu-objs += syscall_hook_manager.o
- kernelsu-objs += throne_tracker.o
- kernelsu-objs += pkg_observer.o
- kernelsu-objs += setuid_hook.o
-@@ -76,4 +75,14 @@ ccflags-y += -DEXPECTED_HASH=\"$(KSU_EXPECTED_HASH)\"
- ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
- ccflags-y += -Wno-declaration-after-statement -Wno-unused-function
- 
-+## For susfs stuff ##
-+ifeq ($(shell test -e $(srctree)/fs/susfs.c; echo $$?),0)
-+$(eval SUSFS_VERSION=$(shell cat $(srctree)/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g'))
-+$(info )
-+$(info -- SUSFS_VERSION: $(SUSFS_VERSION))
-+else
-+$(info -- You have not integrated susfs in your kernel yet.)
-+$(info -- Read: https://gitlab.com/simonpunk/susfs4ksu)
-+endif
-+
- # Keep a new line here!! Because someone may append config
 diff --git a/kernel/allowlist.c b/kernel/allowlist.c
 index b163eb3f..0fa5f8de 100644
 --- a/kernel/allowlist.c
@@ -209,6 +217,7 @@ index b163eb3f..0fa5f8de 100644
      }
  
      return result;
+<<<<<<< HEAD
 diff --git a/kernel/apk_sign.c b/kernel/apk_sign.c
 index c7e23089..6d0bfc84 100644
 --- a/kernel/apk_sign.c
@@ -225,6 +234,8 @@ index c7e23089..6d0bfc84 100644
 +#endif // #ifndef CONFIG_KSU_SUSFS
  }
 \ No newline at end of file
+=======
+>>>>>>> 37c7bfaa9dcd (patches: kernel: Move kernel part build rules from Makefile to Kbuild)
 diff --git a/kernel/app_profile.c b/kernel/app_profile.c
 index ad62a2ff..777f4176 100644
 --- a/kernel/app_profile.c
@@ -1464,6 +1475,7 @@ index 82161f7f..4f0d4f9d 100644
  #endif
 \ No newline at end of file
 diff --git a/kernel/supercalls.c b/kernel/supercalls.c
+<<<<<<< HEAD
 index 348a0285..64405ea4 100644
 --- a/kernel/supercalls.c
 +++ b/kernel/supercalls.c

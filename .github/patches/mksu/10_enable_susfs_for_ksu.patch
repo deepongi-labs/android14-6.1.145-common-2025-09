@@ -460,14 +460,14 @@ diff --git a/kernel/ksu.c b/kernel/ksu.c
 index 8205e104..13af846d 100644
 --- a/kernel/ksu.c
 +++ b/kernel/ksu.c
-@@ -4,12 +4,17 @@
+@@ -4,12 +4,16 @@
  #include <linux/module.h>
  #include <linux/workqueue.h>
  #include <linux/moduleparam.h>
+-
 +#ifdef CONFIG_KSU_SUSFS
 +#include <linux/susfs.h>
 +#endif // #ifdef CONFIG_KSU_SUSFS
- 
  #include "allowlist.h"
  #include "feature.h"
  #include "klog.h" // IWYU pragma: keep
@@ -478,7 +478,7 @@ index 8205e104..13af846d 100644
  #include "ksud.h"
  #include "supercalls.h"
  
-@@ -35,13 +40,21 @@ int __init kernelsu_init(void)
+@@ -35,13 +39,21 @@ int __init kernelsu_init(void)
  
      ksu_supercalls_init();
  
@@ -500,7 +500,7 @@ index 8205e104..13af846d 100644
  
  #ifdef MODULE
  #ifndef CONFIG_KSU_DEBUG
-@@ -60,9 +73,11 @@ void kernelsu_exit(void)
+@@ -60,9 +72,11 @@ void kernelsu_exit(void)
  
      ksu_observer_exit();
  
@@ -1216,17 +1216,17 @@ diff --git a/kernel/supercalls.c b/kernel/supercalls.c
 index 01a7bdb8..c7aa47cd 100644
 --- a/kernel/supercalls.c
 +++ b/kernel/supercalls.c
-@@ -12,6 +12,10 @@
+@@ -11,6 +11,10 @@
+ #include <linux/task_work.h>
  #include <linux/uaccess.h>
  #include <linux/version.h>
- #include <linux/pid.h>
 +#ifdef CONFIG_KSU_SUSFS
 +#include <linux/namei.h>
 +#include <linux/susfs.h>
 +#endif // #ifdef CONFIG_KSU_SUSFS
+ #include <linux/pid.h>
  
  #include "supercalls.h"
- #include "arch.h"
 @@ -25,7 +29,13 @@
  #include "selinux/selinux.h"
  #include "objsec.h"
