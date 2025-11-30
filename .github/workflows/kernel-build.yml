@@ -117,16 +117,6 @@ jobs:
           
           echo "✅ All submodules initialized"
 
-      # ✅ ADD THIS NEW STEP HERE (before Setup KernelSU)
-      - name: Clean Kernel Directory
-        run: |
-          echo "🧹 Cleaning kernel directory for fresh patch application..."
-          cd kernel
-          git checkout -- .
-          git clean -fd
-          cd ..
-          echo "✅ Kernel directory reset to clean state"
-
       - name: Store Workflow Commit Info
         run: |
           WORKFLOW_COMMIT=$(git rev-parse HEAD)
