@@ -10,9 +10,8 @@ Subject: [PATCH] 10_enable_susfs_for_ksu
  kernel/allowlist.c       |   4 +
  kernel/apk_sign.c        |   5 +
  kernel/app_profile.c     | 206 ++++++++++++++++++++-------------------
- kernel/kernel            |   1 +
  kernel/kernel_umount.c   |   3 +
- kernel/ksu.c             |  19 +++-
+ kernel/ksu.c             |  16 ++-
  kernel/ksud.c            |  52 ++++++++++
  kernel/ksud.h            |  19 ++++
  kernel/manager.h         |  14 +++
@@ -159,6 +158,24 @@ index cc4dbb3a..393e16cd 100644
 +endmenu
 +
  endmenu
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 0b8c8a10..ba9272ed 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -13,4 +13,13 @@ compdb:
+ clean:
+ 	make -C $(KDIR) M=$(MDIR) clean
+ 
++## For susfs stuff ##
++ifeq ($(shell test -e $(srctree)/fs/susfs.c; echo $$?),0)
++$(eval SUSFS_VERSION=$(shell cat $(srctree)/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g'))
++$(info )
++$(info -- SUSFS_VERSION: $(SUSFS_VERSION))
++else
++$(info -- You have not integrated susfs in your kernel yet.)
++$(info -- Read: https://gitlab.com/simonpunk/susfs4ksu)
++endif
+ # Keep a new line here!! Because someone may append config
 diff --git a/kernel/allowlist.c b/kernel/allowlist.c
 index b163eb3f..0fa5f8de 100644
 --- a/kernel/allowlist.c
@@ -436,14 +453,6 @@ index 2369abbc..4636ad2f 100644
 +    }
 +#endif // #ifndef CONFIG_KSU_SUSFS
  }
-diff --git a/kernel/kernel b/kernel/kernel
-new file mode 120000
-index 00000000..9e51d0d6
---- /dev/null
-+++ b/kernel/kernel
-@@ -0,0 +1 @@
-+../KernelSU/kernel
-\ No newline at end of file
 diff --git a/kernel/kernel_umount.c b/kernel/kernel_umount.c
 index 35be022f..cbb5ddfd 100644
 --- a/kernel/kernel_umount.c
@@ -469,11 +478,10 @@ diff --git a/kernel/ksu.c b/kernel/ksu.c
 index 8205e104..13af846d 100644
 --- a/kernel/ksu.c
 +++ b/kernel/ksu.c
-@@ -3,13 +3,17 @@
- #include <linux/kobject.h>
+@@ -4,12 +4,17 @@
  #include <linux/module.h>
  #include <linux/workqueue.h>
--#include <linux/moduleparam.h>
+ #include <linux/moduleparam.h>
 +#ifdef CONFIG_KSU_SUSFS
 +#include <linux/susfs.h>
 +#endif // #ifdef CONFIG_KSU_SUSFS
@@ -488,7 +496,7 @@ index 8205e104..13af846d 100644
  #include "ksud.h"
  #include "supercalls.h"
  
-@@ -35,13 +39,21 @@ int __init kernelsu_init(void)
+@@ -35,13 +40,21 @@ int __init kernelsu_init(void)
  
      ksu_supercalls_init();
  
@@ -510,7 +518,7 @@ index 8205e104..13af846d 100644
  
  #ifdef MODULE
  #ifndef CONFIG_KSU_DEBUG
-@@ -60,9 +72,11 @@ void kernelsu_exit(void)
+@@ -60,9 +73,11 @@ void kernelsu_exit(void)
  
      ksu_observer_exit();
  
