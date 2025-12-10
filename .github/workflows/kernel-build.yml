@@ -712,7 +712,7 @@ jobs:
             SUKISU_SCOPE_PATCH="../.github/patches/sukisu/scope_min_manual_hooks_v1.6.patch"
             if [ -f "$SUKISU_SCOPE_PATCH" ]; then
               echo "📋 Applying sukisu scope_min_manual_hooks patch"
-              patch -p1 --forward < "$SUKISU_SCOPE_PATCH" || true
+              patch -p1 --forward -F 3 < "$SUKISU_SCOPE_PATCH" || true
             else
               echo "⚠️  Warning: sukisu scope_min_manual_hooks patch not found: $SUKISU_SCOPE_PATCH"
             fi
@@ -903,6 +903,8 @@ jobs:
             "sukisu")
               # SukiSU-Ultra (builtin branch) - minimal config + manual hook
               echo 'CONFIG_LOCALVERSION="-deepongi+"' >> out/.config
+              echo 'CONFIG_KSU_MANUAL_HOOK=y' >> out/.config
+              echo 'CONFIG_KSU_MANUAL_SU=n' >> out/.config
               ;;
           esac
           
