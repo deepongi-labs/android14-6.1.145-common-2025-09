@@ -1,4 +1,4 @@
-name: Build GKI Kernel with KernelSU Variants v4.2.3 (by deepongi@deepongi-labs)
+name: Tests v4.4.1 (by deepongi@deepongi-labs)
 
 on:
   workflow_dispatch:
@@ -849,17 +849,17 @@ jobs:
           echo "🎯 Expected performance: ~10% overhead (vs ~15% for Kprobes)"
 
       - name: Apply LKM Spoof Patch
-        if: matrix.variant != 'sukisu'
+        if: matrix.variant != 'sukisu' && matrix.variant != 'kowsu'
         run: |
           cd kernel/KernelSU
           
-          # Apply LKM spoof patch (skip for sukisu)
+          # Apply LKM spoof patch (skip for sukisu and kowsu)
           LKM_SPOOF_PATCH="../../.github/patches/${{ matrix.variant }}/20-KernelSU-Spoof-LKM-mode-to-suppress-manager-warning.patch"
           if [ -f "$LKM_SPOOF_PATCH" ]; then
             echo "📋 Applying LKM spoof patch from .github/patches/${{ matrix.variant }}/"
             patch -p1 --forward < "$LKM_SPOOF_PATCH" || true
           else
-            echo "⚠️ LKM spoof patch not found: $LKM_SPOOF_PATCH"
+            echo "ℹ️  LKM spoof patch not found (not needed for ${{ matrix.variant }}): $LKM_SPOOF_PATCH"
           fi
 
       - name: Apply Remote Patches
